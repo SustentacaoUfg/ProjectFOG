@@ -16,8 +16,6 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-bindir=$(dirname $(readlink -f "$BASH_SOURCE") )
-cd $bindir
 workingdir=$(pwd)
 if [[ ! $EUID -eq 0 ]]; then
     exec sudo $0 $@ || echo "FOG Installation must be run as root user"
@@ -26,7 +24,7 @@ fi
 . ../lib/common/functions.sh
 help() {
     echo -e "Usage: $0 [-h?dEUuHSCKYXT] [-f <filename>]"
-    echo -e "\t\t[-D </directory/to/document/root/>] [-c <ssl-path>]"
+    echo -e "\t\t[-D </directory/to/document/root/>] [-c <sslPath>]"
     echo -e "\t\t[-W <webroot/to/fog/after/docroot/>] [-B </backup/path/>]"
     echo -e "\t\t[-s <192.168.1.10>] [-e <192.168.1.254>] [-b <undionly.kpxe>]"
     echo -e "\t-h -? --help\t\t\tDisplay this info"
@@ -39,7 +37,7 @@ help() {
     echo -e "\t-K    --recreate-keys\t\tRecreate the SSL Keys"
     echo -e "\t-Y -y --autoaccept\t\tAuto accept defaults and install"
     echo -e "\t-f    --file\t\t\tUse different update file"
-    echo -e "\t-c    --ssl-path\t\tSpecify the ssl path"
+    echo -e "\t-c    --ssl-file\t\tSpecify the ssl path"
     echo -e "\t               \t\t\t\tdefaults to /opt/fog/snapins/ssl"
     echo -e "\t-D    --docroot\t\t\tSpecify the Apache Docroot for fog"
     echo -e "\t               \t\t\t\tdefaults to OS DocumentRoot"
@@ -57,10 +55,9 @@ help() {
     echo -e "\t-T    --no-tftpbuild\t\tDo not rebuild the tftpd config file"
     echo -e "\t-P    --no-pxedefault\t\tDo not overwrite pxe default file"
     echo -e "\t-F    --no-vhost\t\tDo not overwrite vhost file"
-    echo -e "\t-A    --arm-support\t\tDo not overwrite vhost file"
     exit 0
 }
-optspec="h?odEUHSCKYyXxTPFAf:c:-:W:D:B:s:e:b:"
+optspec="h?odEUHSCKYyXxTPFf:c:-:W:D:B:s:e:b:"
 while getopts "$optspec" o; do
     case $o in
         -)
@@ -74,9 +71,9 @@ while getopts "$optspec" o; do
                     ;;
                 ssl-path)
                     ssslpath="${OPTARG}"
-                    ssslpath="${ssslpath#'/'}"
-                    ssslpath="${ssslpath%'/'}"
-                    ssslpath="/${ssslpath}/"
+                    ssslpath="${sslpath#'/'}"
+                    ssslpath="${sslpath%'/'}"
+                    sslpath="/${sslpath}/"
                     ;;
                 no-vhost)
                     novhost="y"
@@ -146,8 +143,6 @@ while getopts "$optspec" o; do
                         exit 5
                     fi
                     sstartrange=$OPTARG
-                    dodhcp="Y"
-                    bldhcp=1
                     ;;
                 endrange)
                     if [[ $(validip $OPTARG) != 0 ]]; then
@@ -156,8 +151,6 @@ while getopts "$optspec" o; do
                         exit 6
                     fi
                     sendrange=$OPTARG
-                    dodhcp="Y"
-                    bldhcp=1
                     ;;
                 bootfile)
                     sbootfilename=$OPTARG
@@ -173,9 +166,6 @@ while getopts "$optspec" o; do
                     ;;
                 no-pxedefault)
                     snotpxedefaultfile="true"
-                    ;;
-                arm-support)
-                    sarmsupport=1
                     ;;
                 *)
                     if [[ $OPTERR == 1 && ${optspec:0:1} != : ]]; then
@@ -195,9 +185,9 @@ while getopts "$optspec" o; do
             ;;
         c)
             ssslpath="${OPTARG}"
-            ssslpath="${ssslpath#'/'}"
-            ssslpath="${ssslpath%'/'}"
-            ssslpath="/${ssslpath}/"
+            ssslpath="${sslpath#'/'}"
+            ssslpath="${sslpath%'/'}"
+            ssslpath="/${sslpath}/"
             ;;
         d)
             guessdefaults=0
@@ -263,8 +253,6 @@ while getopts "$optspec" o; do
                 exit 5
             fi
             sstartrange=$OPTARG
-            dodhcp="Y"
-            bldhcp=1
             ;;
         e)
             if [[ $(validip $OPTARG) != 0 ]]; then
@@ -273,8 +261,6 @@ while getopts "$optspec" o; do
                 exit 6
             fi
             sendrange=$OPTARG
-            dodhcp="Y"
-            bldhcp=1
             ;;
         b)
             sbootfilename=$OPTARG
@@ -290,9 +276,6 @@ while getopts "$optspec" o; do
             ;;
         P)
             snotpxedefaultfile="true"
-            ;;
-        A)
-            sarmsupport=1
             ;;
         :)
             echo "Option -$OPTARG requires a value"
@@ -365,7 +348,6 @@ echo "Done"
 [[ -z $installtype ]] && installtype=""
 [[ -z $interface ]] && interface=""
 [[ -z $ipaddress  ]] && ipaddress=""
-[[ -z $hostname  ]] && hostname=""
 [[ -z $routeraddress ]] && routeraddress=""
 [[ -z $plainrouter ]] && plainrouter=""
 [[ -z $blexports ]] && blexports=1
@@ -375,7 +357,6 @@ echo "Done"
 [[ -z $doupdate ]] && doupdate=1
 [[ -z $ignorehtmldoc ]] && ignorehtmldoc=0
 [[ -z $httpproto ]] && httpproto="http"
-[[ -z $armsupport ]] && armsupport=0
 [[ -z $fogpriorconfig ]] && fogpriorconfig="$fogprogramdir/.fogsettings"
 #clearScreen
 if [[ -z $* || $* != +(-h|-?|--help|--uninstall) ]]; then
@@ -397,12 +378,16 @@ case $doupdate in
             [[ -n $snotpxedefaultfile ]] && notpxedefaultfile=$snotpxedefaultfile
             [[ -n $snoTftpBuild ]] && noTftpBuild=$snoTftpBuild
             [[ -n $sbootfilename ]] && bootfilename=$sbootfilename
+            [[ -n $sendrange ]] && endrange=$sendrange
+            [[ -n $sstartrange ]] && startrange=$sstartrange
             [[ -n $sbackupPath ]] && backupPath=$sbackupPath
             [[ -n $swebroot ]] && webroot=$swebroot
             [[ -n $sdocroot ]] && docroot=$sdocroot
+            [[ -n $srecreateCA ]] && recreateCA=$srecreateCA
+            [[ -n $srecreateKeys ]] && recreateKeys=$srecreateKeys
             [[ -n $signorehtmldoc ]] && ignorehtmldoc=$signorehtmldoc
+            [[ -n $ssslpath ]] && sslpath=$ssslpath
             [[ -n $scopybackold ]] && copybackold=$scopybackold
-            [[ -n $sarmsupport ]] && armsupport=$sarmsupport
         fi
         ;;
     *)
@@ -411,11 +396,6 @@ case $doupdate in
 esac
 # evaluation of command line options
 [[ -n $shttpproto ]] && httpproto=$shttpproto
-[[ -n $sstartrange ]] && startrange=$sstartrange
-[[ -n $sendrange ]] && endrange=$sendrange
-[[ -n $ssslpath ]] && sslpath=$ssslpath
-[[ -n $srecreateCA ]] && recreateCA=$srecreateCA
-[[ -n $srecreateKeys ]] && recreateKeys=$srecreateKeys
 
 [[ -f $fogpriorconfig ]] && grep -l webroot $fogpriorconfig >>$workingdir/error_logs/fog_error_${version}.log 2>&1
 case $? in
@@ -438,8 +418,6 @@ if [[ -z $backupPath ]]; then
 fi
 [[ -z $bootfilename ]] && bootfilename="undionly.kpxe"
 [[ ! $doupdate -eq 1 || ! $fogupdateloaded -eq 1 ]] && . ../lib/common/input.sh
-# ask user input for newly added options like hostname etc.
-. ../lib/common/newinput.sh
 echo
 echo "   ######################################################################"
 echo "   #     FOG now has everything it needs for this setup, but please     #"
@@ -460,10 +438,9 @@ echo
 echo " * Here are the settings FOG will use:"
 echo " * Base Linux: $osname"
 echo " * Detected Linux Distribution: $linuxReleaseName"
-echo " * Interface: $interface"
 echo " * Server IP Address: $ipaddress"
 echo " * Server Subnet Mask: $submask"
-echo " * Server Hostname: $hostname"
+echo " * Interface: $interface"
 case $installtype in
     N)
         echo " * Installation Type: Normal Server"
