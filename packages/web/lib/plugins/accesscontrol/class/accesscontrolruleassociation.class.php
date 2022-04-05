@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * @category AccessControlAssociation
+ * @category AccessControlRuleAssociation
  * @package  FOGProject
  * @author   Fernando Gietz <fernando.gietz@gmail.com>
  * @license  http://opensource.org/licenses/gpl-3.0 GPLv3
@@ -13,38 +13,38 @@
 /**
  * Access Control plugin
  *
- * @category AccessControlAssociation
+ * @category AccessControlRuleAssociation
  * @package  FOGProject
  * @author   Fernando Gietz <fernando.gietz@gmail.com>
  * @license  http://opensource.org/licenses/gpl-3.0 GPLv3
  * @link     https://fogproject.org
  */
-class AccessControlAssociation extends FOGController
+class AccessControlRuleAssociation extends FOGController
 {
     /**
-     * Table name.
+     * The table name.
      *
      * @var string
      */
-    protected $databaseTable = 'roleUserAssoc';
+    protected $databaseTable = 'roleRuleAssoc';
     /**
-     * Table fields.
+     * The table fields.
      *
      * @var array
      */
     protected $databaseFields = array(
-        'id' => 'ruaID',
-        'name' => 'ruaName',
-        'accesscontrolID' => 'ruaRoleID',
-        'userID' => 'ruaUserID',
+        'id' => 'rraID',
+        'name' => 'rraName',
+        'accesscontrolID' => 'rraRoleID',
+        'accesscontrolruleID' => 'rraRuleID',
     );
     /**
-     * Required fields.
+     * The required fields.
      *
      * @var array
      */
     protected $databaseFieldsRequired = array(
         'accesscontrolID',
-        'userID',
+        'accesscontrolruleID',
     );
 }
