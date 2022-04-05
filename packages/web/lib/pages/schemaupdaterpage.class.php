@@ -54,11 +54,13 @@ class SchemaUpdaterPage extends FOGPage
         $vals = [
             "\n",
         ];
+
         $buttons = self::makeButton(
             'schema-send',
             _('Install/Update now'),
             'btn btn-primary hidden runningdb pull-right'
         );
+
         echo self::makeFormTag(
             'form-horizontal',
             'schema-update-form',
@@ -76,7 +78,9 @@ class SchemaUpdaterPage extends FOGPage
         echo _('Database Install | Update');
         echo '</h4>';
         echo '</div>';
+
         echo '<div class="box-body">';
+
         // DB Running
         echo '<div class="hidden runningdb" id="runningdb">';
         echo '<p class="help-block">';
@@ -114,6 +118,7 @@ class SchemaUpdaterPage extends FOGPage
         echo 'mysqldump --allow-keywords -x -v fog > fogbackup.sql';
         echo '</pre>';
         echo '</div>';
+
         // Completed Update.
         echo '<div class="hidden" id="completed">';
         echo '<p class="help-block">';
@@ -123,6 +128,7 @@ class SchemaUpdaterPage extends FOGPage
         echo _(' to login');
         echo '</p>';
         echo '</div>';
+
         // DB Not Running
         echo '<div class="hidden" id="stoppeddb">';
         echo '<p class="help-block">';
@@ -142,6 +148,7 @@ class SchemaUpdaterPage extends FOGPage
         );
         echo '</p>';
         echo '</div>';
+
         echo '</div>';
         echo '</div>';
         echo '</div>';
@@ -281,6 +288,7 @@ class SchemaUpdaterPage extends FOGPage
                             _('Database SQL'),
                             $update
                         );
+
                         error_log(
                             sprintf(
                                 "%s: %s\n",
