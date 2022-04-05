@@ -36,7 +36,7 @@ class TasktypeeditManagementPage extends FOGPage
      */
     public function __construct($name = '')
     {
-        $this->name = 'Task Type Management';
+        $this->name = _('Task Type Management');
         self::$foglang['ExportTasktypeedit'] = _('Export Task Types');
         self::$foglang['ImportTasktypeedit'] = _('Import Task Types');
         parent::__construct($this->name);
@@ -79,7 +79,7 @@ class TasktypeeditManagementPage extends FOGPage
         $this->attributes = array(
             array(
                 'width' => 16,
-                'class' => 'filter-false'
+                'class' => 'parser-false filter-false'
             ),
             array(),
             array(),
